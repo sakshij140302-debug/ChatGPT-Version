@@ -28,41 +28,33 @@ def is_unethical(text):
     return False
 
 # ---------------------------
-# Clean Generated Poem
+# Clean Poem Output
 # ---------------------------
-def contains_unethical_content(text):
-    text = text.lower()
+def clean_poem(text):
     for word in BANNED_WORDS:
-        if re.search(rf"\b{word}\b", text):
-            return True
-    return False
+        pattern = rf"\b{word}\b"
+        text = re.sub(pattern, "***", text, flags=re.IGNORECASE)
+    return text
 
 # ---------------------------
-# Generate Safe Poem
+# Generate Poem
 # ---------------------------
-def generate_safe_poem(topic):
+def generate_poem(topic):
     prompt = f"""
-    Write a positive, clean, and ethical English poem about {topic}.
-    The poem must not include violence, hate, adult content, crime, or harmful themes.
-    Keep it inspirational and pure.
+    Write a beautiful, positive, and inspirational English poem about {topic}.
+    The poem must be clean and suitable for all ages.
     """
     
-    for _ in range(3):  # Try 3 times if unsafe output generated
-        result = generator(
-            prompt,
-            max_length=150,
-            num_return_sequences=1,
-            temperature=0.8,
-            top_p=0.9,
-            repetition_penalty=1.2
-        )
-        
-        poem = result[0]['generated_text']
-        
-        if not contains_unethical_content(poem):
-            return poem
+    result = generator(
+        prompt,
+        max_length=120,
+        num_return_sequences=1,
+        temperature=0.7,
+        top_p=0.9
+    )
     
-    return None  # If still unsafe after retries
+    poem = result[0]['generated_text']
+    return clean_poem(poem)
 
 # ---------------------------
 # Streamlit UI
@@ -71,7 +63,7 @@ st.set_page_config(page_title="Soft ChatGPT - Ethical Poem Generator")
 
 st.title("🌸 Soft ChatGPT - Ethical Poem Generator")
 st.write("This AI generates only positive and ethical poems.")
-st.write("Unethical topics or harmful content are blocked automatically.")
+st.write("Unethical topics are blocked automatically.")
 
 topic = st.text_input("Topic :--", "")
 
@@ -83,11 +75,7 @@ if st.button("Generate Poem"):
         st.error("❌ This topic is not allowed due to ethical guidelines.")
     
     else:
-        with st.spinner("Generating your poem safely..."):
-            poem = generate_safe_poem(topic)
-            
-            if poem:
-                st.subheader("Output :--")
-                st.write(poem)
-            else:
-                st.error("⚠️ Unable to generate a safe poem. Please try another topic.")
+        with st.spinner("Generating your poem..."):
+            poem = generate_poem(topic)
+            st.subheader("Output :--")
+            st.write(poem)
